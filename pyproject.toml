@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sinhala-story-eval"
+version = "0.4.1"
+description = "Quality evaluation framework for Sinhala stories, including DARC — the first automated measure of diglossic register consistency for Sinhala"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "S.M.A.D.V.D. Sammandapperuma" }]
+keywords = ["sinhala", "nlg-evaluation", "diglossia", "low-resource-nlp", "register"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Sinhala",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+# The three CPU metrics have NO dependencies. That is deliberate — DARC,
+# coherence and lexical diversity are pure Python and run anywhere.
+dependencies = []
+
+[project.optional-dependencies]
+# Only fluency needs a model. Keeping it optional means the novel
+# contribution installs in seconds rather than pulling ~2 GB of torch.
+fluency = [
+    "torch>=2.0",
+    "transformers>=4.30",
+]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Repository = "https://github.com/VihangaDeshan/sinhala-story-eval"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

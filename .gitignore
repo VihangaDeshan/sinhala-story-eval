@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Private — maps blind IDs back to models. Must never reach raters.
+data/human_eval/*answer_key*
+
+# Private — the 8 published human reference stories are third-party
+# copyright. Their SCORES ship (measurements are not the work); their
+# TEXTS do not. See data/README.md.
+data/stories/private/
