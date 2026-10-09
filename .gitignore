@@ -15,3 +15,6 @@ data/human_eval/*answer_key*
 # copyright. Their SCORES ship (measurements are not the work); their
 # TEXTS do not. See data/README.md.
 data/stories/private/
+
+# DARC exhibit contains third-party human text
+experiments/darc_eval/private/
