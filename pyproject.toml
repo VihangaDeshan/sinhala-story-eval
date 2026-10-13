@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sinhala-story-eval"
 version = "0.4.1"
-description = "Quality evaluation framework for Sinhala stories, including DARC — the first automated measure of diglossic register consistency for Sinhala"
+description = "Quality evaluation framework for Sinhala stories, including DARC, a dialogue-aware measure of diglossic register consistency for Sinhala"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

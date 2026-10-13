@@ -9,7 +9,7 @@ Four dimensions, of which the fourth is novel:
     lexical      MTLD, with TTR as a length-sensitive baseline
     register     DARC — Dialog-Aware Register Consistency
 
-DARC is the contribution. It is the first automated measure of diglossic
+DARC is the contribution. It is an automated measure of diglossic
 register consistency for Sinhala, built on documented verb morphology
 rather than on a corpus, so it has no data dependency that can break.
 

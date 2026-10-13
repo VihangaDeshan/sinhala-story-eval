@@ -2,7 +2,7 @@
 """
 DARC — Dialog-Aware Register Consistency.
 
-The novel contribution of this framework: the first automated measure of
+The novel contribution of this framework: an automated measure of
 diglossic register consistency for Sinhala narrative text.
 
 WHAT IT MEASURES

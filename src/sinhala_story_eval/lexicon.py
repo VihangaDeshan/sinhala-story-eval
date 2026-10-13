@@ -7,7 +7,7 @@ the documented grammar of Sinhala diglossia:
 
     "subject-verb agreement is present in literary Sinhala but does not
      occur in spoken Sinhala"
-     — Gair & Paolillo (1997); Hilpert & Wettewa (2019)
+     — Gair (1986), as cited in Mawelle (2023); Zubair (2010)
 
 TWO TIERS
 ---------

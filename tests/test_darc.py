@@ -13,7 +13,7 @@ from sinhala_story_eval import darc, classify_register, segment
 # Documented literary/spoken minimal pairs. Same verb, same meaning; only
 # the subject-agreement suffix differs.
 MINIMAL_PAIRS = [
-    ("ගැහුවේය", "ගැහුවා"),    # Weerasinghe et al. (2013)
+    ("ගැහුවේය", "ගැහුවා"),
     ("ගියේය", "ගියා"),
     ("කීවාය", "කිව්වා"),
     ("දුටුවේය", "දැක්කා"),

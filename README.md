@@ -11,7 +11,7 @@ Four dimensions, of which the fourth is the contribution:
 | Lexical diversity | MTLD, with TTR as a baseline | no |
 | **Register consistency** | **DARC** | no |
 
-**DARC** is the first automated measure of diglossic register consistency for Sinhala. It is built on documented verb morphology rather than on a corpus, so it has no data dependency that can break.
+**DARC** is a dialogue-aware measure of diglossic register consistency for Sinhala. It is built on documented verb morphology rather than on a corpus, so it has no data dependency that can break.
 
 ## Install
 
@@ -83,9 +83,9 @@ pytest          # 82 tests lock these in
 
 Measured on 30 LLM-generated stories and 8 published human-written stories.
 
-**LLMs follow the Sinhala register convention more consistently than human authors do.** Register was never instructed in the prompt, yet all 30 generated stories narrated in the literary register and all 30 fell inside the expected dialogue-balance band. Six of eight published human stories narrate in the spoken register — a recognised modern style.
+**LLMs follow the Sinhala register convention more consistently than human authors do.** Register was never instructed in the prompt, yet all 30 generated stories narrated in the literary register and all 30 fell inside the expected dialogue-balance band. Five of eight published human stories narrate mainly in the spoken register — a recognised modern style.
 
-**Human writing occupies both extremes; LLM output clusters.** Composite SD 0.686 for human stories against 0.157 for generated — a 4.4× ratio. Six of eight human stories sit in the top or bottom five of all 38. Measurable evidence for a claim usually made only qualitatively.
+**Human writing occupies both extremes; LLM output clusters.** Composite SD 0.686 for human stories against 0.157 for generated — a 4.36× ratio. Six of eight human stories sit in the top or bottom five of all 38.
 
 **DARC cannot separate the three models on this corpus, and that is informative.** All 30 scored ≥ 0.90, so between-model spread (0.013) falls below within-model noise (0.021). On the human corpus DARC spreads across 0.13–0.97. The measure discriminates; a uniformly conventional corpus gives it nothing to discriminate.
 
@@ -127,10 +127,9 @@ tests/
 ## References
 
 - Ferguson, C. A. (1959). Diglossia. *Word*, 15(2), 325–340.
-- Gair, J. W., & Paolillo, J. C. (1997). *Sinhala*. LINCOM Europa.
+- Mawelle, I. (2023). A spectrum? Diglossia as seen in contemporary Sinhala novels. *Journal of Social Sciences and Humanities Review*, 8(3), 91–108. https://doi.org/10.4038/jsshr.v8i3.120
 - Chandralal, D. (2010). *Sinhala*. John Benjamins.
-- Hilpert, M., & Wettewa, C. (2019). Auxiliaries in spoken Sinhala. *FLAS*.
-- Weerasinghe, R. et al. (2013). *TPLS*, 3(7).
+- Zubair, C. (2010). Diglossia versus register: Discursive classifications of two Sinhala varieties. *Berkeley Linguistics Society*.
 - McCarthy, P. M., & Jarvis, S. (2010). MTLD, vocd-D, and HD-D. *Behavior Research Methods*, 42(2), 381–392.
 - Salazar, J. et al. (2020). Masked Language Model Scoring. *ACL 2020*.
 - Dhananjaya, V. et al. (2022). BERTifying Sinhala. arXiv:2208.07864.

@@ -17,8 +17,8 @@ the original.
 
 CHUNKING IS MANDATORY
 ---------------------
-SinBERT's limit is 512 tokens. An 800-word Sinhala story tokenises to
-~2,700, so naive truncation evaluates 19% of it:
+SinBERT's limit is 512 tokens. A 654-word Sinhala story tokenised to
+2,675 tokens, so naive truncation evaluates about 19% of it:
 
     truncated at 512 tokens    22.92
     chunked over full story     7.51
