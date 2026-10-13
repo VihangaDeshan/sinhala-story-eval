@@ -7,7 +7,7 @@ the study and the published package cannot drift apart.
 |---|---|---|
 | `01_generate.py` | OpenRouter, three models, length gate 720–880 words | no |
 | `02_score_cpu.py` | DARC, coherence, MTLD | no |
-| `03_score_gpu.py` | SinBERT PPPL | **yes** |
+| `PPPL_All38.ipynb` (Colab) | SinBERT PPPL, all 38 stories, T4, 11 Sep 2026 (119.8 min); H02/H07 narrative and dialogue re-run after segmenter v4 in `PPPL_Patch_v4.ipynb` | **yes** |
 | `04_composite.py` | z-scores against the human reference | no |
 | `05_validate.py` | correlations, Krippendorff α, discrimination ratios | no |
 
