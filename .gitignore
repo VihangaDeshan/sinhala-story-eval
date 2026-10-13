@@ -18,3 +18,6 @@ data/stories/private/
 
 # DARC exhibit contains third-party human text
 experiments/darc_eval/private/
+
+# Local secrets
+.env
