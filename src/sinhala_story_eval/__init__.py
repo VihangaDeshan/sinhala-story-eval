@@ -107,3 +107,25 @@ def evaluate(text, fluency=False, include_composite=True,
         result["z_scores"] = z
 
     return result
+
+
+# --- FR-01: input validation -------------------------------------------------
+# evaluate() rejects input that is not Unicode Sinhala before any metric runs,
+# as FR-01 requires. The original function is unchanged underneath.
+import functools as _fr01_functools
+import inspect as _fr01_inspect
+
+from .validate import validate_text, MIN_SINHALA_SHARE  # noqa: E402
+
+_evaluate_unvalidated = evaluate
+_fr01_first = next(iter(_fr01_inspect.signature(_evaluate_unvalidated).parameters))
+
+
+@_fr01_functools.wraps(_evaluate_unvalidated)
+def evaluate(*args, **kwargs):
+    validate_text(args[0] if args else kwargs.get(_fr01_first))
+    return _evaluate_unvalidated(*args, **kwargs)
+
+
+if "__all__" in globals():
+    __all__ = list(__all__) + ["validate_text"]

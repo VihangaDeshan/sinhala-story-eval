@@ -1,0 +1,18 @@
+
+=== T1 narrative corruption (spoken narration injected) ===
+  T1_darc  mean by level: 0%: 0.9790  10%: 0.9231  25%: 0.8589  50%: 0.7853
+  T1_base  mean by level: 0%: 0.6162  10%: 0.5724  25%: 0.5176  50%: 0.4489
+  Spearman rho(level, DARC)     = -0.931   (RQ2 target <= -0.80)
+  Spearman rho(level, baseline) = -0.723
+  stories with all levels in strictly correct order: 30/30
+  stories never increasing and lower at the top level: 30/30
+  per-story rho: median -1.000, worst -1.000
+
+=== T2 dialogue invariance (same amount of spoken text added as quoted dialogue) ===
+  T2_darc  mean by level: 0%: 0.9790  10%: 0.9791  25%: 0.9782  50%: 0.9692
+  T2_base  mean by level: 0%: 0.6162  10%: 0.5612  25%: 0.4926  50%: 0.4180
+  change 0% -> 50%:  DARC -0.0098   baseline -0.1982
+  Expected: DARC roughly flat (dialogue-aware); baseline falls (dialogue-blind).
+
+=== T4 neutral-word false positives ===
+  0/58 neutral words labelled (none)

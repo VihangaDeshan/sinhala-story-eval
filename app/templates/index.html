@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSEF — Sinhala Story Evaluation Framework</title>
+  <meta name="description"
+        content="Paste a Sinhala story and see SSEF's four-dimension quality scores: fluency, coherence, lexical diversity, and register consistency (DARC)." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  {# Pass server-side data to JavaScript #}
+  <script>
+    window.STORIES          = {{ stories_json | safe }};
+    window.FLUENCY_AVAILABLE = {{ 'true' if fluency_available else 'false' }};
+    window.HUMAN_REFERENCE  = {{ human_reference | tojson }};
+  </script>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- ── Language toggle ────────────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+      <span class="lang-sep" aria-hidden="true">|</span>
+      <button type="button" class="lang-btn" data-lang="si" aria-pressed="false">සිං</button>
+    </div>
+  </div>
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="logo-badge">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" stroke="#6c63ff" stroke-width="2"/>
+        <path d="M8 22 Q16 6 24 22" stroke="#4ecdc4" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="10" r="3" fill="#a855f7"/>
+      </svg>
+      SSEF
+    </div>
+    <p class="site-tagline" data-i18n="tagline">{{ t('tagline') }}</p>
+  </header>
+
+  <!-- ── Input card ─────────────────────────────────────────────────── -->
+  <section class="card" aria-labelledby="input-heading">
+    <p class="card-title" id="input-heading" data-i18n="input.title">{{ t('input.title') }}</p>
+
+    <div class="input-controls">
+      <select id="sample-select" class="sample-select" data-i18n-aria="input.sample" aria-label="{{ t('input.sample') }}">
+        <!-- filled by JS -->
+      </select>
+      <button id="btn-non-sinhala" class="btn btn-ghost" type="button"
+              aria-label="Fill textarea with English demo text">
+        <span data-i18n="input.nonsinhala">{{ t('input.nonsinhala') }}</span>
+      </button>
+    </div>
+
+    <textarea id="story-textarea"
+              placeholder="{{ t('input.placeholder') }}"
+              data-i18n-placeholder="input.placeholder"
+              aria-label="Sinhala story text"
+              rows="9"></textarea>
+
+    <div class="textarea-footer">
+      <label class="fluency-toggle" id="fluency-label">
+        <input type="checkbox" id="fluency-checkbox" data-i18n-aria="input.fluency" aria-label="{{ t('input.fluency') }}" />
+        <span data-i18n="input.fluency">{{ t('input.fluency') }}</span>
+      </label>
+      <span id="fluency-unavailable-note" class="fluency-disabled-note hidden"
+            aria-live="polite" data-i18n="err.fluency_unavailable">
+        {{ t('err.fluency_unavailable') }}
+      </span>
+      <button id="btn-submit" class="btn btn-primary" type="button"
+              aria-label="Evaluate story">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 8h10M9 5l3 3-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-i18n="btn.evaluate">{{ t('btn.evaluate') }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Results top anchor ──────────────────────────────────────────── -->
+  <div id="results-top"></div>
+
+  <!-- ── Validation line ────────────────────────────────────────────── -->
+  <div id="validation-line" class="validation-line hidden" role="alert" aria-live="assertive"></div>
+
+  <!-- ── Polling banner ─────────────────────────────────────────────── -->
+  <div id="polling-banner" class="polling-banner hidden" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <span id="polling-text">{{ t('msg.running').replace('{s}', '0') }}</span>
+  </div>
+
+  <!-- ── How to read these results ───────────────────────────────────── -->
+  <details class="howto" open>
+    <summary data-i18n="howto.title">{{ t('howto.title') }}</summary>
+    <ol>
+      <li data-i18n="howto.1">{{ t('howto.1') }}</li>
+      <li data-i18n="howto.2">{{ t('howto.2') }}</li>
+      <li data-i18n="howto.3">{{ t('howto.3') }}</li>
+      <li data-i18n="howto.4">{{ t('howto.4') }}</li>
+    </ol>
+  </details>
+
+  <!-- ── Metric cards ────────────────────────────────────────────────── -->
+  <div id="metrics-section" class="hidden" aria-label="Metric results">
+    <div class="metrics-grid">
+
+      <!-- Fluency -->
+      <article class="metric-card fluency" id="card-fluency" aria-labelledby="fluency-heading">
+        <p class="metric-label" id="fluency-heading" data-i18n="card.fluency">{{ t('card.fluency') }}</p>
+        <div class="metric-score" aria-label="Fluency score">—</div>
+        <div class="metric-ref"></div>
+        <div class="metric-direction-wrap"></div>
+        <div class="metric-sub"></div>
+        <div class="metric-off hidden" data-i18n="fluency.off">{{ t('fluency.off') }}</div>
+        <div class="metric-note" data-i18n="note.fluency">{{ t('note.fluency') }}</div>
+      </article>
+
+      <!-- Coherence -->
+      <article class="metric-card coherence" id="card-coherence" aria-labelledby="coherence-heading">
+        <p class="metric-label" id="coherence-heading" data-i18n="card.coherence">{{ t('card.coherence') }}</p>
+        <div class="metric-score" aria-label="Coherence score">—</div>
+        <div class="metric-ref"></div>
+        <div class="metric-direction-wrap"></div>
+        <div class="metric-sub"></div>
+        <div class="metric-note" data-i18n="note.coherence">{{ t('note.coherence') }}</div>
+      </article>
+
+      <!-- Lexical diversity -->
+      <article class="metric-card lexical" id="card-lexical" aria-labelledby="lexical-heading">
+        <p class="metric-label" id="lexical-heading" data-i18n="card.lexical">{{ t('card.lexical') }}</p>
+        <div class="metric-score" aria-label="MTLD score">—</div>
+        <div class="metric-ref"></div>
+        <div class="metric-direction-wrap"></div>
+        <div class="metric-sub"></div>
+        <div class="metric-note" data-i18n="note.lexical">{{ t('note.lexical') }}</div>
+      </article>
+
+      <!-- Register -->
+      <article class="metric-card register" id="card-register" aria-labelledby="register-heading">
+        <p class="metric-label" id="register-heading" data-i18n="card.register">{{ t('card.register') }}</p>
+        <div class="metric-score" aria-label="DARC score">—</div>
+        <div class="metric-ref"></div>
+        <div class="metric-direction-wrap"></div>
+        <div class="metric-sub"></div>
+        <div class="metric-note" data-i18n="note.darc">{{ t('note.darc') }}</div>
+      </article>
+
+    </div><!-- /.metrics-grid -->
+  </div><!-- /#metrics-section -->
+
+  <!-- ── Composite ───────────────────────────────────────────────────── -->
+  <div id="composite-section" class="composite-row hidden" aria-label="Composite score">
+    <div class="comp-label">{{ t('comp.label4') }}</div>
+    <div class="comp-score">—</div>
+    <div class="comp-note" data-i18n="comp.note">{{ t('comp.note') }}</div>
+  </div>
+
+  <!-- ── Story viewer ─────────────────────────────────────────────────── -->
+  <section id="story-section" class="story-viewer hidden" aria-labelledby="story-heading">
+    <p class="story-viewer-title" id="story-heading" data-i18n="story.title">{{ t('story.title') }}</p>
+
+    <div class="story-legend" role="list" aria-label="Highlight legend">
+      <div class="legend-item" role="listitem">
+        <span class="legend-swatch swatch-dia" aria-hidden="true"></span>
+        <span data-i18n="legend.dialogue">{{ t('legend.dialogue') }}</span>
+      </div>
+      <div class="legend-item" role="listitem">
+        <span class="legend-swatch swatch-spoken-nar" aria-hidden="true"></span>
+        <span data-i18n="legend.spoken">{{ t('legend.spoken') }}</span>
+      </div>
+      <div class="legend-item" role="listitem">
+        <span class="legend-swatch swatch-lit-dia" aria-hidden="true"></span>
+        <span data-i18n="legend.literary">{{ t('legend.literary') }}</span>
+      </div>
+    </div>
+
+    <div class="story-text" id="story-text-content" aria-label="Annotated story text"></div>
+    <p class="highlight-count" id="highlight-count" aria-live="polite"></p>
+  </section>
+
+  <!-- ── Footer ──────────────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <p data-i18n="footer">{{ t('footer') }}</p>
+    <span class="version-badge">sinhala-story-eval v{{ lib_version }}</span>
+  </footer>
+
+</div><!-- /.page-wrap -->
+
+<script src="{{ url_for('static', filename='view.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

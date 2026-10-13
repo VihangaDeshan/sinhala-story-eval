@@ -1,0 +1,83 @@
+SPLIT-ය DIAGNOSTIC — 2026-10-13
+==============================================================================
+Formula check (src/sinhala_story_eval/metrics/register.py:130):
+    s_nar = nL / (nL + nS) if (nL + nS) else 0.5   -> CONFIRMED
+
+Standalone "ය" token: classify_register -> None  (rule: none)
+
+GENERATED (30)
+-------------------------------------------------------------------------------------------------
+id                    model/corpus      nar    nL    nS  split_ya  ws_adj  nar_adj  ya-token tags
+N01_CoastTrain        gemini          0.988    81     1         0       0    0.988  {None: 1}
+N02_Peradeniya        gemini          0.986    69     1         0       0    0.986  -
+N03_GalleFort         gemini          0.986    70     1         0       0    0.986  -
+N04_Avurudu           gemini          1.000    92     0         0       0    1.000  -
+N07_Rajarata          gemini          0.987    78     1         0       0    0.987  -
+N09_Vesak             gemini          0.988    80     1         0       0    0.988  -
+N10_Mirissa           gemini          0.981   102     2         0       0    0.981  -
+N12_ITNightShift      gemini          0.979    93     2         0       0    0.979  -
+N14_FloodRelief       gemini          0.990    95     1         0       0    0.990  -
+N15_Airport           gemini          1.000    95     0         0       0    1.000  -
+N01_CoastTrain        gpt             0.993   145     1         0       0    0.993  -
+N02_Peradeniya        gpt             1.000   100     0         0       0    1.000  -
+N03_GalleFort         gpt             0.959    93     4         0       0    0.959  {None: 1}
+N04_Avurudu           gpt             1.000   102     0         0       0    1.000  -
+N07_Rajarata          gpt             1.000    88     0         0       0    1.000  -
+N09_Vesak             gpt             1.000    87     0         0       0    1.000  -
+N10_Mirissa           gpt             1.000   110     0         0       0    1.000  -
+N12_ITNightShift      gpt             1.000    99     0         0       0    1.000  -
+N14_FloodRelief       gpt             0.972   106     3         0       0    0.972  -
+N15_Airport           gpt             0.991   116     1         0       0    0.991  -
+N01_CoastTrain        deepseek        1.000   123     0         0       0    1.000  -
+N02_Peradeniya        deepseek        0.959    70     3         3       3    1.000  {None: 18}
+N03_GalleFort         deepseek        0.893    50     6         6       6    1.000  {None: 25}
+N04_Avurudu           deepseek        0.884    61     8         8       8    1.000  {None: 36}
+N07_Rajarata          deepseek        1.000    89     0         0       0    1.000  -
+N09_Vesak             deepseek        0.989    86     1         0       0    0.989  -
+N10_Mirissa           deepseek        1.000    80     0         0       0    1.000  {None: 1}
+N12_ITNightShift      deepseek        1.000   112     0         0       0    1.000  -
+N14_FloodRelief       deepseek        0.992   118     1         0       0    0.992  {None: 1}
+N15_Airport           deepseek        0.977   129     3         0       0    0.977  {None: 13}
+
+HUMAN (8)
+-------------------------------------------------------------------------------------------------
+id                    model/corpus      nar    nL    nS  split_ya  ws_adj  nar_adj  ya-token tags
+H01                   human           0.012     1    80         0       0    0.012  -
+H02                   human           0.126    11    76         0       0    0.126  -
+H03                   human           0.069    16   217         0       0    0.069  -
+H04                   human           0.450    49    60         2       2    0.468  {None: 6}
+H05                   human           0.115    15   115         0       0    0.115  -
+H06                   human           0.955    85     4         0       0    0.955  -
+H07                   human           0.962    50     2         0       0    0.962  {None: 1}
+H08                   human           0.941    64     4         0       0    0.941  -
+
+ws_adj = split_ya pairs separated only by whitespace in the raw narration
+(tok() drops punctuation, so a pair split by '.' would still count as split_ya).
+
+SPLIT_YA WORDS (generated only)
+------------------------------------------------------------------------------
+N01_CoastTrain · gemini: 0
+N04_Avurudu · deepseek: 8
+    දුටුවා ය
+    වූවා ය
+    පැමිණියා ය
+    දුන්නා ය
+    බැලුවා ය
+    කීවා ය
+    කීවා ය
+    කීවා ය
+
+TOTALS
+------------------------------------------------------------------------------
+generated  sum nS=41    sum split_ya=17    split_ya/nS= 41.5%  mean nar=0.983  mean nar_adj=0.992
+human      sum nS=558   sum split_ya=2     split_ya/nS=  0.4%  mean nar=0.454  mean nar_adj=0.456
+
+Human stories: nar < 0.5 before / after adjustment
+    H01                    before=True   after=True  
+    H02                    before=True   after=True  
+    H03                    before=True   after=True  
+    H04                    before=True   after=True  
+    H05                    before=True   after=True  
+    H06                    before=False  after=False 
+    H07                    before=False  after=False 
+    H08                    before=False  after=False 
