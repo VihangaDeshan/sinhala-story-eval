@@ -291,6 +291,18 @@ function renderResults(result, text, scroll) {
   // 1. Validation line
   showValidationKey("msg.accepted", { n: result.words }, true);
 
+  // Length notice
+  const lengthNoticeEl = $("length-notice");
+  if (lengthNoticeEl) {
+    if (result.length_notice) {
+      lengthNoticeEl.textContent = tr("notice.length", { n: result.words });
+      lengthNoticeEl.classList.remove("hidden");
+    } else {
+      lengthNoticeEl.classList.add("hidden");
+      lengthNoticeEl.textContent = "";
+    }
+  }
+
   // 2. Metric cards
   $("metrics-section").classList.remove("hidden");
   setCard("card-fluency", view.fluency);
@@ -377,6 +389,11 @@ function clearResults() {
   _last = null;
   _valState = null;
   $("validation-line").classList.add("hidden");
+  const lengthNoticeEl = $("length-notice");
+  if (lengthNoticeEl) {
+    lengthNoticeEl.classList.add("hidden");
+    lengthNoticeEl.textContent = "";
+  }
   $("metrics-section").classList.add("hidden");
   $("composite-section").classList.add("hidden");
   $("story-section").classList.add("hidden");

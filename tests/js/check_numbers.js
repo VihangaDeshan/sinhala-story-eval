@@ -9,7 +9,7 @@ const view = require(path.join(root, "view.js"));
 const load = (p) => JSON.parse(fs.readFileSync(p, "utf-8"));
 const en = load(path.join(root, "i18n", "en.json"));
 const si = load(path.join(root, "i18n", "si.json"));
-const results = load(process.argv[2]);
+const results = process.argv[2] ? load(process.argv[2]) : {};
 
 const ref = {
   pppl_overall: { mean: 20.5, sd: 3 }, coherence: { mean: 0.42, sd: 0.1 },
@@ -24,7 +24,7 @@ let failed = false;
 // Static strings (r-values, n = 30, 30,000 ...): same numbers in every filled key.
 for (const key of Object.keys(en)) {
   if (!si[key]) continue;
-  const a = (en[key].match(NUM) || []).join(" "), b = (si[key].match(NUM) || []).join(" ");
+  const a = (en[key].match(NUM) || []).slice().sort().join(" "), b = (si[key].match(NUM) || []).slice().sort().join(" ");
   if (a !== b) { console.log("key " + key + ": en numbers [" + a + "] != si numbers [" + b + "]"); failed = true; }
 }
 

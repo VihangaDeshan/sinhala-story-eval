@@ -348,3 +348,108 @@ def test_switching_language_changes_no_number(tmp_path):
     proc = subprocess.run(["node", script, str(payload)], capture_output=True,
                           text=True, encoding="utf-8")
     assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — Input instructions and reference labels (Change A, B, C)
+# ---------------------------------------------------------------------------
+
+def test_input_instructions_rendered_in_english_page(client):
+    """1. The rendered English page contains 'Input instructions' and the instr.1 text."""
+    en = _load_i18n("en")
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "Input instructions" in html
+    assert en["instr.1"] in html
+
+
+def test_si_json_keys_and_non_empty():
+    """2. si.json and en.json have exactly the same keys, and no new key is empty in si.json."""
+    en, si = _load_i18n("en"), _load_i18n("si")
+    assert set(en) == set(si)
+    new_keys = [
+        "instr.title", "instr.1", "instr.2", "instr.3", "instr.4", "instr.5",
+        "instr.6", "notice.length",
+    ]
+    for k in new_keys:
+        assert k in si, f"Key {k} missing in si.json"
+        assert si[k] and si[k].strip(), f"New key {k} is empty in si.json"
+
+
+def test_tested_length_story_has_no_notice(client):
+    """3. The first story in generated30_stories.json that lies inside 488–1,273 words:
+    HTTP 200, all numbers unchanged from evaluate(text, fluency=False), and no length notice."""
+    from app.app import TESTED_MIN_WORDS, TESTED_MAX_WORDS
+    stories = _load_stories()
+    target_story = None
+    expected_eval = None
+    for s in stories:
+        ev = evaluate(s["text"], fluency=False)
+        if TESTED_MIN_WORDS <= ev["words"] <= TESTED_MAX_WORDS:
+            target_story = s
+            expected_eval = ev
+            break
+
+    assert target_story is not None, "No story found within tested range"
+    resp = client.post(
+        "/api/evaluate",
+        data=json.dumps({"text": target_story["text"], "fluency": False}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+
+    scalar_keys = [
+        "words", "darc", "darc_narrative", "darc_dialogue", "darc_balance",
+        "dialogue_ratio", "dialogue_spans", "narrative_tokens", "dialogue_tokens",
+        "coherence", "mtld", "ttr", "composite",
+    ]
+    for key in scalar_keys:
+        assert data[key] == expected_eval[key]
+    assert data["z_scores"] == expected_eval["z_scores"]
+    assert data.get("length_notice") is None
+
+
+def test_short_sinhala_text_has_length_notice(client):
+    """4. A short Sinhala text (take the first 3 sentences of that same story):
+    HTTP 200, scores returned, and the length notice is present with the correct {n}."""
+    from app.app import TESTED_MIN_WORDS, TESTED_MAX_WORDS
+    stories = _load_stories()
+    target_story = None
+    for s in stories:
+        ev = evaluate(s["text"], fluency=False)
+        if TESTED_MIN_WORDS <= ev["words"] <= TESTED_MAX_WORDS:
+            target_story = s
+            break
+
+    assert target_story is not None
+    sents = [s.strip() for s in target_story["text"].replace("\n", " ").split(".") if s.strip()]
+    short_text = ". ".join(sents[:3]) + "."
+
+    resp = client.post(
+        "/api/evaluate",
+        data=json.dumps({"text": short_text, "fluency": False}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 200
+    data = resp.get_json()
+
+    assert "words" in data
+    assert data["words"] < TESTED_MIN_WORDS
+    assert "darc" in data
+    assert "coherence" in data
+    assert "mtld" in data
+
+    assert data.get("length_notice") is not None
+    expected_notice = f"This story has {data['words']} words. SSEF was tested on stories of 488 to 1,273 words, so scores for this length have not been tested."
+    assert data["length_notice"] == expected_notice
+
+
+def test_card_labels_say_8_story_average_not_published_average():
+    """5. The card labels contain '8-story average' and no longer contain 'published average'."""
+    en = _load_i18n("en")
+    assert "8-story average" in en["dir.above"]
+    assert "8-story average" in en["dir.below"]
+    for key in ("ref.published", "dir.above", "dir.below"):
+        assert "published average" not in en[key].lower()

@@ -55,6 +55,18 @@
       </button>
     </div>
 
+    <details class="howto input-instructions" open>
+      <summary data-i18n="instr.title">{{ t('instr.title') }}</summary>
+      <ul>
+        <li data-i18n="instr.1">{{ t('instr.1') }}</li>
+        <li data-i18n="instr.2">{{ t('instr.2') }}</li>
+        <li data-i18n="instr.3">{{ t('instr.3') }}</li>
+        <li data-i18n="instr.4">{{ t('instr.4') }}</li>
+        <li data-i18n="instr.5">{{ t('instr.5') }}</li>
+        <li data-i18n="instr.6">{{ t('instr.6') }}</li>
+      </ul>
+    </details>
+
     <textarea id="story-textarea"
               placeholder="{{ t('input.placeholder') }}"
               data-i18n-placeholder="input.placeholder"
@@ -85,6 +97,9 @@
 
   <!-- ── Validation line ────────────────────────────────────────────── -->
   <div id="validation-line" class="validation-line hidden" role="alert" aria-live="assertive"></div>
+
+  <!-- ── Length notice line ─────────────────────────────────────────── -->
+  <div id="length-notice" class="notice-line hidden" role="note"></div>
 
   <!-- ── Polling banner ─────────────────────────────────────────────── -->
   <div id="polling-banner" class="polling-banner hidden" role="status" aria-live="polite">

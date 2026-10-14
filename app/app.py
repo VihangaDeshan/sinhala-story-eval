@@ -39,6 +39,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Story data — loaded once at startup
 # ---------------------------------------------------------------------------
+# Range of the 38 stories SSEF was tested on (human reference 488–1,273 words; generated 720–880).
+TESTED_MIN_WORDS = 488
+TESTED_MAX_WORDS = 1273
+
 _STORIES = []
 _STORIES_PATH = os.path.join(
     os.path.dirname(__file__), "..", "data", "stories", "generated30_stories.json"
@@ -94,6 +98,11 @@ def _run_fluency_job(job_id: str, text: str):
         result = evaluate(text, fluency=True)
         # make composite label
         result["_fluency_on"] = True
+        words = result.get("words", 0)
+        if words < TESTED_MIN_WORDS or words > TESTED_MAX_WORDS:
+            result["length_notice"] = _EN["notice.length"].replace("{n}", str(words))
+        else:
+            result["length_notice"] = None
         with _job_lock:
             _jobs[job_id]["status"] = "done"
             _jobs[job_id]["result"] = result
@@ -312,6 +321,11 @@ def create_app():
             result["_fluency_on"] = False
             # Attach highlight segments
             result["segments"] = _highlight_text(text)
+            words = result.get("words", 0)
+            if words < TESTED_MIN_WORDS or words > TESTED_MAX_WORDS:
+                result["length_notice"] = _EN["notice.length"].replace("{n}", str(words))
+            else:
+                result["length_notice"] = None
             return jsonify(result), 200
         except Exception as exc:
             logger.error("evaluate() failed:\n%s", traceback.format_exc())
