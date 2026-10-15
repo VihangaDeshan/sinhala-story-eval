@@ -64,7 +64,11 @@ function applyLang() {
   document.documentElement.lang = _lang;
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = tr(el.dataset.i18n);
+    if (el.dataset.i18n === "login.signedin" && el.dataset.user) {
+      el.textContent = tr("login.signedin", { u: el.dataset.user });
+    } else {
+      el.textContent = tr(el.dataset.i18n);
+    }
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     el.setAttribute("placeholder", tr(el.dataset.i18nPlaceholder));

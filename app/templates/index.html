@@ -19,8 +19,16 @@
 
 <div class="page-wrap">
 
-  <!-- ── Language toggle ────────────────────────────────────────────── -->
+  <!-- ── Language toggle & user status ────────────────────────────── -->
   <div class="topbar">
+    {% if login_enabled and current_user %}
+    <div class="user-status" id="user-status">
+      <span class="user-signedin" data-i18n="login.signedin" data-user="{{ current_user }}">{{ t('login.signedin').replace('{u}', current_user) }}</span>
+      <form action="{{ url_for('logout') }}" method="post" class="logout-form">
+        <button type="submit" class="btn-logout" data-i18n="login.signout">{{ t('login.signout') }}</button>
+      </form>
+    </div>
+    {% endif %}
     <div class="lang-toggle" role="group" aria-label="Language">
       <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
       <span class="lang-sep" aria-hidden="true">|</span>

@@ -77,4 +77,17 @@ sleep 3
 curl -s localhost/healthz
 
 echo ""
+# ── 8. Accounts summary ────────────────────────────────────────────────
+"$VENV/bin/python" - <<EOF
+import os
+try:
+    from app.auth import get_auth_path, load_auth
+    auth = load_auth(get_auth_path())
+    count = len(auth.get("users", {})) if auth else 0
+except Exception:
+    count = 0
+print(f"Accounts: {count} (manage with: cd $REPO_DIR && .venv/bin/python -m app.auth list|add|reset|remove)")
+EOF
+
+echo ""
 echo "=== Setup complete ==="

@@ -21,3 +21,6 @@ experiments/darc_eval/private/
 
 # Local secrets
 .env
+
+# Instance data (accounts, local database)
+instance/

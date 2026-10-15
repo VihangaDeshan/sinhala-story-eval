@@ -23,15 +23,44 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from sinhala_story_eval import evaluate
 
 # ---------------------------------------------------------------------------
-# Fixture
+# Fixtures
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    from app.app import _login_failures, _signup_history
+    _login_failures.clear()
+    _signup_history.clear()
+    yield
+    _login_failures.clear()
+    _signup_history.clear()
+
+
 @pytest.fixture
-def client():
+def auth_file(tmp_path, monkeypatch):
+    path = str(tmp_path / "ssef_auth.json")
+    monkeypatch.setenv("SSEF_AUTH_FILE", path)
+    from app.auth import add_user
+    add_user(path, "testuser", "testpassword123")
+    return path
+
+
+@pytest.fixture
+def anon_client(auth_file):
     from app.app import create_app
     app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as c:
+        yield c
+
+
+@pytest.fixture
+def client(auth_file):
+    from app.app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        c.post("/login", data={"username": "testuser", "password": "testpassword123"})
         yield c
 
 
@@ -453,3 +482,384 @@ def test_card_labels_say_8_story_average_not_published_average():
     assert "8-story average" in en["dir.below"]
     for key in ("ref.published", "dir.above", "dir.below"):
         assert "published average" not in en[key].lower()
+
+
+# ---------------------------------------------------------------------------
+# Section 7 — Authentication Tests (New Tests 1–14)
+# ---------------------------------------------------------------------------
+
+def test_auth_1_not_signed_in_redirect_and_401(anon_client):
+    """1. Not signed in: GET / -> redirect to /login; POST /api/evaluate -> 401."""
+    resp = anon_client.get("/")
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+    resp = anon_client.post(
+        "/api/evaluate",
+        data=json.dumps({"text": _first_story_text(), "fluency": False}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 401
+    assert resp.get_json() == {"error": "login required"}
+
+
+def test_auth_2_signup_valid_and_stored_hash(anon_client, auth_file):
+    """2. Sign-up with a valid username and matching passwords -> signed in,
+    redirected to /; the file now holds that user with a hash, not the password."""
+    resp = anon_client.post(
+        "/register",
+        data={
+            "username": "valid_user",
+            "password": "valid_password123",
+            "confirm": "valid_password123",
+        },
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/"
+
+    # Signed in check
+    main_resp = anon_client.get("/")
+    assert main_resp.status_code == 200
+
+    # The file now holds that user with a hash, not the password
+    with open(auth_file, "r", encoding="utf-8") as f:
+        auth_data = json.load(f)
+    assert "valid_user" in auth_data["users"]
+    stored_hash = auth_data["users"]["valid_user"]
+    assert "valid_password123" not in stored_hash
+    assert stored_hash.startswith("scrypt:") or stored_hash.startswith("pbkdf2:")
+
+
+def test_auth_3_signup_taken_username(anon_client, auth_file):
+    """3. Sign-up with a taken username (any letter case) -> register.taken; nothing changes."""
+    en = _load_i18n("en")
+    with open(auth_file, "r", encoding="utf-8") as f:
+        orig = f.read()
+
+    for variant in ["testuser", "TestUser", "TESTUSER"]:
+        resp = anon_client.post(
+            "/register",
+            data={
+                "username": variant,
+                "password": "password999",
+                "confirm": "password999",
+            },
+        )
+        assert resp.status_code == 200
+        assert en["register.taken"] in resp.data.decode("utf-8")
+
+    with open(auth_file, "r", encoding="utf-8") as f:
+        assert f.read() == orig
+
+
+def test_auth_4_signup_validation_failures(anon_client, auth_file):
+    """4. Sign-up with mismatching passwords, a 7-character password, and an
+    invalid username (ab, has space, 31 characters) -> matching messages; nothing created."""
+    en = _load_i18n("en")
+    with open(auth_file, "r", encoding="utf-8") as f:
+        orig = f.read()
+
+    # Mismatching passwords
+    resp = anon_client.post(
+        "/register",
+        data={"username": "mismatch_user", "password": "password123", "confirm": "different123"},
+    )
+    assert resp.status_code == 200
+    assert en["register.mismatch"] in resp.data.decode("utf-8")
+
+    # 7-character password
+    resp = anon_client.post(
+        "/register",
+        data={"username": "short_pw_user", "password": "1234567", "confirm": "1234567"},
+    )
+    assert resp.status_code == 200
+    assert en["register.short_password"] in resp.data.decode("utf-8")
+
+    # Invalid usernames: ab, has space, 31 characters
+    for bad_u in ["ab", "has space", "u" * 31]:
+        resp = anon_client.post(
+            "/register",
+            data={"username": bad_u, "password": "password123", "confirm": "password123"},
+        )
+        assert resp.status_code == 200
+        assert en["register.invalid_username"] in resp.data.decode("utf-8")
+
+    # Nothing created
+    with open(auth_file, "r", encoding="utf-8") as f:
+        assert f.read() == orig
+
+
+def test_auth_5_registration_disabled(monkeypatch, auth_file):
+    """5. SSEF_REGISTRATION=off -> sign-up shows register.closed and creates nothing; sign-in works."""
+    monkeypatch.setenv("SSEF_REGISTRATION", "off")
+    from app.app import create_app
+    en = _load_i18n("en")
+    app = create_app()
+    app.config["TESTING"] = True
+
+    with app.test_client() as c:
+        # GET shows register.closed
+        resp = c.get("/register")
+        assert resp.status_code == 200
+        assert en["register.closed"] in resp.data.decode("utf-8")
+
+        # POST creates nothing and shows register.closed
+        with open(auth_file, "r", encoding="utf-8") as f:
+            orig = f.read()
+        resp = c.post(
+            "/register",
+            data={"username": "closed_user", "password": "password123", "confirm": "password123"},
+        )
+        assert resp.status_code == 200
+        assert en["register.closed"] in resp.data.decode("utf-8")
+        with open(auth_file, "r", encoding="utf-8") as f:
+            assert f.read() == orig
+
+        # Sign-in still works
+        login_resp = c.post(
+            "/login",
+            data={"username": "testuser", "password": "testpassword123"},
+            follow_redirects=True,
+        )
+        assert login_resp.status_code == 200
+
+
+def test_auth_6_wrong_password_correct_password_and_evaluate(anon_client):
+    """6. Wrong password -> login.error; correct password -> /; then evaluating
+    the first generated story (fluency off) gives exactly the numbers of evaluate(text, fluency=False)."""
+    en = _load_i18n("en")
+
+    # Wrong password
+    resp = anon_client.post(
+        "/login",
+        data={"username": "testuser", "password": "wrong_password"},
+    )
+    assert resp.status_code == 200
+    assert en["login.error"] in resp.data.decode("utf-8")
+
+    # Correct password -> redirects to /
+    resp = anon_client.post(
+        "/login",
+        data={"username": "testuser", "password": "testpassword123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/"
+
+    # Evaluating the first generated story gives exactly evaluate(text, fluency=False)
+    text = _first_story_text()
+    expected = evaluate(text, fluency=False)
+
+    api_resp = anon_client.post(
+        "/api/evaluate",
+        data=json.dumps({"text": text, "fluency": False}),
+        content_type="application/json",
+    )
+    assert api_resp.status_code == 200
+    data = api_resp.get_json()
+
+    scalar_keys = [
+        "words", "darc", "darc_narrative", "darc_dialogue", "darc_balance",
+        "dialogue_ratio", "dialogue_spans", "narrative_tokens", "dialogue_tokens",
+        "coherence", "mtld", "ttr", "composite",
+    ]
+    for key in scalar_keys:
+        assert data[key] == expected[key]
+    assert data["z_scores"] == expected["z_scores"]
+
+
+def test_auth_7_logout(client):
+    """7. POST /logout -> / redirects to /login again."""
+    resp = client.get("/")
+    assert resp.status_code == 200
+
+    resp = client.post("/logout", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+    resp = client.get("/")
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_auth_8_login_lockout(anon_client):
+    """8. Six wrong sign-in attempts from one client -> login.locked, and the
+    correct password is refused until the lock expires."""
+    import time
+    from app.app import _login_failures
+    en = _load_i18n("en")
+
+    for _ in range(5):
+        resp = anon_client.post(
+            "/login",
+            data={"username": "testuser", "password": "badpassword"},
+        )
+        assert resp.status_code == 200
+        assert en["login.error"] in resp.data.decode("utf-8")
+
+    # 6th wrong attempt gets login.locked
+    resp = anon_client.post(
+        "/login",
+        data={"username": "testuser", "password": "badpassword"},
+    )
+    assert resp.status_code == 200
+    assert en["login.locked"] in resp.data.decode("utf-8")
+
+    # Correct password is also refused while locked
+    resp = anon_client.post(
+        "/login",
+        data={"username": "testuser", "password": "testpassword123"},
+    )
+    assert resp.status_code == 200
+    assert en["login.locked"] in resp.data.decode("utf-8")
+
+    # Expire the lock
+    ip = "127.0.0.1"
+    if ip in _login_failures:
+        _login_failures[ip]["locked_until"] = time.time() - 1
+
+    # Now correct password succeeds
+    resp = anon_client.post(
+        "/login",
+        data={"username": "testuser", "password": "testpassword123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/"
+
+
+def test_auth_9_signup_limit(anon_client):
+    """9. Six sign-ups from one client within an hour -> the sixth gets register.limit."""
+    en = _load_i18n("en")
+    for i in range(5):
+        resp = anon_client.post(
+            "/register",
+            data={
+                "username": f"limit_user_{i}",
+                "password": "password123",
+                "confirm": "password123",
+            },
+            follow_redirects=False,
+        )
+        assert resp.status_code == 302
+        anon_client.post("/logout")
+
+    # 6th attempt
+    resp = anon_client.post(
+        "/register",
+        data={
+            "username": "limit_user_5",
+            "password": "password123",
+            "confirm": "password123",
+        },
+    )
+    assert resp.status_code == 200
+    assert en["register.limit"] in resp.data.decode("utf-8")
+
+
+def test_auth_10_login_disabled(monkeypatch, tmp_path):
+    """10. SSEF_LOGIN=off -> / and /api/evaluate work without signing in."""
+    monkeypatch.setenv("SSEF_LOGIN", "off")
+    dummy_auth = str(tmp_path / "must_not_be_created.json")
+    monkeypatch.setenv("SSEF_AUTH_FILE", dummy_auth)
+
+    from app.app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+
+    with app.test_client() as c:
+        resp = c.get("/")
+        assert resp.status_code == 200
+        assert not os.path.exists(dummy_auth)
+
+        resp = c.post(
+            "/api/evaluate",
+            data=json.dumps({"text": _first_story_text(), "fluency": False}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+
+
+def test_auth_11_healthz_public(anon_client):
+    """11. GET /healthz -> ok without signing in."""
+    resp = anon_client.get("/healthz")
+    assert resp.status_code == 200
+    assert resp.data.decode("utf-8") == "ok"
+
+
+def test_auth_12_safe_next_url(anon_client):
+    """12. next=https://example.com and next=//example.com after sign-in do not leave the site."""
+    # Absolute URL
+    resp = anon_client.post(
+        "/login?next=https://example.com",
+        data={"username": "testuser", "password": "testpassword123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/"
+
+    # Protocol-relative URL
+    resp = anon_client.post(
+        "/login?next=//example.com",
+        data={"username": "testuser", "password": "testpassword123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/"
+
+    # Valid relative next URL
+    resp = anon_client.post(
+        "/login?next=/some/local/path",
+        data={"username": "testuser", "password": "testpassword123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/some/local/path"
+
+
+def test_auth_13_concurrent_create_user(tmp_path):
+    """13. Two threads calling create_user with different names at the same
+    time -> both users exist and the file is valid JSON."""
+    from app.auth import create_user
+    import threading
+
+    auth_path = str(tmp_path / "concurrent_auth.json")
+
+    def worker(uname):
+        create_user(auth_path, uname, "threadpassword123")
+
+    t1 = threading.Thread(target=worker, args=("thread_user_1",))
+    t2 = threading.Thread(target=worker, args=("thread_user_2",))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    with open(auth_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    assert "thread_user_1" in data["users"]
+    assert "thread_user_2" in data["users"]
+
+
+def test_auth_14_no_tracked_file_contains_werkzeug_hash():
+    """14. No tracked file contains a werkzeug hash (scan tracked text files
+    for scrypt: and pbkdf2:, excluding this test file itself)."""
+    import subprocess
+    proc = subprocess.run(["git", "ls-files"], capture_output=True, text=True, check=True)
+    files = proc.stdout.strip().splitlines()
+
+    for fpath in files:
+        norm = os.path.normpath(fpath)
+        if norm.endswith("test_app.py"):
+            continue
+        if not os.path.isfile(fpath):
+            continue
+        try:
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+        except Exception:
+            continue
+        assert "scrypt:" not in content, f"Tracked file {fpath} contains scrypt hash"
+        assert "pbkdf2:" not in content, f"Tracked file {fpath} contains pbkdf2 hash"

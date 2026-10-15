@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSEF — Sign in</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- ── Language toggle ────────────────────────────────────────────── -->
+  <div class="topbar">
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+      <span class="lang-sep" aria-hidden="true">|</span>
+      <button type="button" class="lang-btn" data-lang="si" aria-pressed="false">සිං</button>
+    </div>
+  </div>
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="logo-badge">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" stroke="#6c63ff" stroke-width="2"/>
+        <path d="M8 22 Q16 6 24 22" stroke="#4ecdc4" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="10" r="3" fill="#a855f7"/>
+      </svg>
+      SSEF
+    </div>
+    <p class="site-tagline" data-i18n="tagline">{{ t('tagline') }}</p>
+  </header>
+
+  <!-- ── Login card ──────────────────────────────────────────────────── -->
+  <section class="card auth-card" aria-labelledby="login-heading">
+    <h1 class="card-title" id="login-heading" data-i18n="login.title">{{ t('login.title') }}</h1>
+
+    <p class="auth-note" data-i18n="login.note">{{ t('login.note') }}</p>
+
+    {% if error_key %}
+    <div class="validation-line auth-error" role="alert" data-i18n="{{ error_key }}">{{ t(error_key) }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}" class="auth-form">
+      <div class="form-group">
+        <label for="username" data-i18n="login.username">{{ t('login.username') }}</label>
+        <input type="text" id="username" name="username" value="{{ username or '' }}" required autofocus autocomplete="username" class="auth-input" />
+      </div>
+
+      <div class="form-group">
+        <label for="password" data-i18n="login.password">{{ t('login.password') }}</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" class="auth-input" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" data-i18n="login.submit">{{ t('login.submit') }}</button>
+    </form>
+
+    <p class="auth-forgot" data-i18n="login.forgot">{{ t('login.forgot') }}</p>
+
+    <div class="auth-switch">
+      <a href="{{ url_for('register') }}" data-i18n="login.no_account">{{ t('login.no_account') }}</a>
+    </div>
+  </section>
+
+  <!-- ── Footer ──────────────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <p data-i18n="footer">{{ t('footer') }}</p>
+    <span class="version-badge">sinhala-story-eval</span>
+  </footer>
+
+</div><!-- /.page-wrap -->
+
+<script>
+  (function() {
+    var LANG_KEY = "ssef-lang";
+    var I18N = { en: {}, si: {} };
+    var currentLang = "en";
+    try {
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === "si") currentLang = "si";
+    } catch(e) {}
+
+    function tr(key) {
+      return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.en && I18N.en[key]) || key;
+    }
+
+    function apply() {
+      document.documentElement.lang = currentLang;
+      document.querySelectorAll("[data-i18n]").forEach(function(el) {
+        el.textContent = tr(el.getAttribute("data-i18n"));
+      });
+      document.querySelectorAll(".lang-btn").forEach(function(b) {
+        var on = b.getAttribute("data-lang") === currentLang;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    }
+
+    Promise.all([
+      fetch("/static/i18n/en.json").then(function(r) { return r.json(); }),
+      fetch("/static/i18n/si.json").then(function(r) { return r.json(); })
+    ]).then(function(res) {
+      I18N.en = res[0];
+      I18N.si = res[1];
+      apply();
+    }).catch(function() {});
+
+    document.querySelectorAll(".lang-btn").forEach(function(b) {
+      b.addEventListener("click", function() {
+        currentLang = b.getAttribute("data-lang");
+        try { localStorage.setItem(LANG_KEY, currentLang); } catch(e) {}
+        apply();
+      });
+    });
+  })();
+</script>
+</body>
+</html>

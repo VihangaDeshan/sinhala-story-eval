@@ -63,5 +63,30 @@
   "legend.literary": "Dialogue with literary-register forms",
   "count.line": "{n} spoken-register word(s) in narration highlighted; {m} literary-register word(s) in dialogue highlighted. ({k} flagged total)",
 
-  "footer": "SSEF gives no good-or-bad verdict and does not measure plot, creativity or enjoyment. Scores are shown against eight published Sinhala stories."
+  "footer": "SSEF gives no good-or-bad verdict and does not measure plot, creativity or enjoyment. Scores are shown against eight published Sinhala stories.",
+
+  "login.title": "Sign in",
+  "login.username": "Username",
+  "login.password": "Password",
+  "login.submit": "Sign in",
+  "login.note": "Sign in or create an account to use the app.",
+  "login.error": "Incorrect username or password.",
+  "login.locked": "Too many failed attempts. Try again in a few minutes.",
+  "login.forgot": "Forgot your password? Ask the researcher to reset it.",
+  "login.no_account": "No account? Create one",
+  "login.have_account": "Already have an account? Sign in",
+  "login.signedin": "Signed in as {u}",
+  "login.signout": "Sign out",
+  "register.title": "Create an account",
+  "register.confirm": "Confirm password",
+  "register.submit": "Create account",
+  "register.username_hint": "3–30 characters: letters, numbers or _",
+  "register.password_hint": "At least 8 characters. Do not use a password you use anywhere else.",
+  "register.privacy": "Only your username and a hashed form of your password are stored. No email address or other personal information is collected.",
+  "register.taken": "That username is already taken.",
+  "register.mismatch": "The passwords do not match.",
+  "register.invalid_username": "Use 3–30 letters, numbers or _.",
+  "register.short_password": "The password must be at least 8 characters.",
+  "register.limit": "Too many accounts created from this network. Try again later.",
+  "register.closed": "New accounts are not being accepted at the moment."
 }

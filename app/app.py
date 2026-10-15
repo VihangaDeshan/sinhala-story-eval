@@ -10,9 +10,11 @@ Endpoints:
     GET  /healthz    Returns "ok"
 """
 
+import datetime
 import json
 import logging
 import os
+import secrets
 import sys
 import threading
 import time
@@ -27,7 +29,17 @@ _SRC  = os.path.normpath(os.path.join(_HERE, "..", "src"))
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from app.auth import (
+    check_user,
+    create_user,
+    get_auth_path,
+    get_secret_key,
+    load_auth,
+    validate_credentials,
+)
 
 
 logging.basicConfig(
@@ -35,6 +47,86 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Rate limiting & auth state (in-memory, lost on restart)
+# ---------------------------------------------------------------------------
+_rate_limit_lock = threading.Lock()
+_login_failures: dict = {}    # ip -> {"count": int, "window_start": float, "locked_until": float}
+_signup_history: dict = {}    # ip -> [timestamps]
+
+
+def _get_client_ip() -> str:
+    return request.remote_addr or "127.0.0.1"
+
+
+def _is_login_enabled() -> bool:
+    return os.environ.get("SSEF_LOGIN", "").strip().lower() != "off"
+
+
+def _is_registration_enabled() -> bool:
+    return os.environ.get("SSEF_REGISTRATION", "").strip().lower() != "off"
+
+
+def _is_safe_next_url(target: str | None) -> bool:
+    if not target:
+        return False
+    if target.startswith("//") or "://" in target or target.startswith("\\"):
+        return False
+    if not target.startswith("/"):
+        return False
+    return True
+
+
+def _is_signin_locked(ip: str) -> bool:
+    with _rate_limit_lock:
+        state = _login_failures.get(ip)
+        if not state:
+            return False
+        now = time.time()
+        if state.get("locked_until", 0) > now:
+            return True
+        if state.get("locked_until", 0) <= now and state.get("locked_until", 0) > 0:
+            _login_failures.pop(ip, None)
+            return False
+        if now - state.get("window_start", now) > 600:
+            _login_failures.pop(ip, None)
+            return False
+        return False
+
+
+def _record_signin_failure(ip: str) -> None:
+    """Record a failed sign-in attempt. Lock if 5 failures within 10 minutes."""
+    with _rate_limit_lock:
+        now = time.time()
+        state = _login_failures.get(ip)
+        if not state or (now - state.get("window_start", now) > 600 and state.get("locked_until", 0) <= now):
+            state = {"count": 1, "window_start": now, "locked_until": 0}
+            _login_failures[ip] = state
+            return
+        state["count"] += 1
+        if state["count"] >= 5:
+            state["locked_until"] = now + 600
+
+
+def _record_signin_success(ip: str) -> None:
+    with _rate_limit_lock:
+        _login_failures.pop(ip, None)
+
+
+def _can_signup(ip: str) -> bool:
+    with _rate_limit_lock:
+        now = time.time()
+        history = [t for t in _signup_history.get(ip, []) if now - t < 3600]
+        _signup_history[ip] = history
+        return len(history) < 5
+
+
+def _record_signup_success(ip: str) -> None:
+    with _rate_limit_lock:
+        now = time.time()
+        history = _signup_history.setdefault(ip, [])
+        history.append(now)
 
 # ---------------------------------------------------------------------------
 # Story data — loaded once at startup
@@ -236,11 +328,175 @@ def _emit_dialogue_words(text, classify_register, segs):
 # ---------------------------------------------------------------------------
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
+
+    # Session cookie settings: HttpOnly, SameSite=Lax, lifetime 8h.
+    # Note: Do not set SESSION_COOKIE_SECURE = True until HTTPS is added.
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(hours=8)
+
+    auth_path = get_auth_path()
+    if _is_login_enabled():
+        app.secret_key = get_secret_key(auth_path)
+    else:
+        # If login is off and no file exists, use a random key generated at start-up and do not create a file
+        if os.path.exists(auth_path):
+            app.secret_key = get_secret_key(auth_path)
+        else:
+            app.secret_key = secrets.token_hex(32)
+
     _load_stories()
 
     @app.context_processor
-    def _inject_t():
-        return {"t": lambda key: _EN[key]}
+    def _inject_context():
+        return {
+            "t": lambda key: _EN.get(key, key),
+            "login_enabled": _is_login_enabled(),
+            "current_user": session.get("user"),
+        }
+
+    @app.before_request
+    def _auth_guard():
+        if not _is_login_enabled():
+            return None
+
+        # Allow static assets
+        if request.endpoint == "static" or request.path.startswith("/static/"):
+            return None
+
+        # Allow health check
+        if request.path == "/healthz":
+            return None
+
+        # Allow login and registration
+        if request.path in ("/login", "/register"):
+            return None
+
+        # Allow signed-in users
+        if session.get("user"):
+            return None
+
+        # Unauthenticated API calls return 401 JSON
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "login required"}), 401
+
+        # Redirect unauthenticated page requests to /login
+        next_target = request.full_path if request.query_string else request.path
+        if next_target.endswith("?"):
+            next_target = next_target[:-1]
+        return redirect(url_for("login", next=next_target if next_target != "/" else None))
+
+    # -------------------------------------------------------- /login
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if not _is_login_enabled():
+            return redirect(url_for("index"))
+
+        if session.get("user"):
+            next_url = request.args.get("next")
+            if _is_safe_next_url(next_url):
+                return redirect(next_url)
+            return redirect(url_for("index"))
+
+        ip = _get_client_ip()
+
+        if request.method == "POST":
+            if _is_signin_locked(ip):
+                return render_template(
+                    "login.html",
+                    error_key="login.locked",
+                    username=request.form.get("username", ""),
+                )
+
+            username = (request.form.get("username") or "").strip()
+            password = request.form.get("password") or ""
+
+            if check_user(auth_path, username, password):
+                _record_signin_success(ip)
+                session.permanent = True
+                session["user"] = username.lower()
+                next_url = request.args.get("next")
+                if _is_safe_next_url(next_url):
+                    return redirect(next_url)
+                return redirect(url_for("index"))
+            else:
+                _record_signin_failure(ip)
+                return render_template(
+                    "login.html",
+                    error_key="login.error",
+                    username=username,
+                )
+
+        return render_template("login.html")
+
+    # -------------------------------------------------------- /register
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        if not _is_login_enabled():
+            return redirect(url_for("index"))
+
+        if session.get("user"):
+            return redirect(url_for("index"))
+
+        if not _is_registration_enabled():
+            return render_template("register.html", registration_closed=True)
+
+        if request.method == "POST":
+            ip = _get_client_ip()
+            username = (request.form.get("username") or "").strip()
+            password = request.form.get("password") or ""
+            confirm = request.form.get("confirm") or ""
+
+            if not _can_signup(ip):
+                return render_template(
+                    "register.html",
+                    error_key="register.limit",
+                    username=username,
+                )
+
+            ok, err_key = validate_credentials(username, "placeholder_pw")
+            if not ok and err_key == "register.invalid_username":
+                return render_template(
+                    "register.html",
+                    error_key="register.invalid_username",
+                    username=username,
+                )
+
+            if len(password) < 8:
+                return render_template(
+                    "register.html",
+                    error_key="register.short_password",
+                    username=username,
+                )
+
+            if password != confirm:
+                return render_template(
+                    "register.html",
+                    error_key="register.mismatch",
+                    username=username,
+                )
+
+            created = create_user(auth_path, username, password)
+            if not created:
+                return render_template(
+                    "register.html",
+                    error_key="register.taken",
+                    username=username,
+                )
+
+            _record_signup_success(ip)
+            session.permanent = True
+            session["user"] = username.lower()
+            return redirect(url_for("index"))
+
+        return render_template("register.html")
+
+    # -------------------------------------------------------- POST /logout
+    @app.route("/logout", methods=["POST"])
+    def logout():
+        session.clear()
+        return redirect(url_for("login"))
 
     # ------------------------------------------------------------------ GET /
     @app.route("/")

@@ -50,14 +50,57 @@ See `deploy/ssef.service` and `deploy/nginx_ssef.conf` for the full systemd + ng
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/`  | Serve the single-page UI |
+| `GET`  | `/`  | Serve the single-page UI (redirects to `/login` if not signed in) |
+| `GET`, `POST` | `/login` | Sign in to an account |
+| `GET`, `POST` | `/register` | Create a new user account |
+| `POST` | `/logout` | Sign out and clear session |
 | `POST` | `/api/evaluate` | Evaluate text (body: `{"text": "…", "fluency": false}`) |
 | `GET`  | `/api/job/<id>` | Poll a background fluency job |
 | `POST` | `/api/highlight` | Re-generate highlight segments for a given text |
-| `GET`  | `/healthz` | Returns `ok` |
+| `GET`  | `/healthz` | Returns `ok` (public health check) |
 
 ## Environment variables
 
 | Variable | Description |
 |----------|-------------|
 | `SSEF_ALLOW_CPU_FLUENCY=1` | Enable the fluency checkbox even without a GPU (slow) |
+| `SSEF_LOGIN=off` | Disable authentication requirement (local development / Colab) |
+| `SSEF_REGISTRATION=off` | Close new user sign-up (existing users can still sign in) |
+| `SSEF_AUTH_FILE` | Path to JSON account storage (default: `instance/ssef_auth.json`) |
+
+## Accounts
+
+Anyone may create an account and sign in. Sign-up is open by default.
+
+### Managing accounts from the command line
+
+Run these commands from the repository root:
+
+- **List accounts:**
+  ```bash
+  python -m app.auth list
+  ```
+- **Add a user:**
+  ```bash
+  python -m app.auth add <username>
+  ```
+- **Reset a user's password:**
+  ```bash
+  python -m app.auth reset <username>
+  ```
+- **Remove a user:**
+  ```bash
+  python -m app.auth remove <username>
+  ```
+
+Passwords are asked interactively twice via `getpass` and are never passed as command-line arguments.
+
+### Configuration & Notes
+
+- `SSEF_REGISTRATION=off` closes user sign-up while keeping sign-in enabled.
+- `SSEF_LOGIN=off` disables login and sign-up controls completely for local development.
+- Passwords are sent without encryption until HTTPS is added.
+
+### What is stored
+
+Only usernames and password hashes in `instance/ssef_auth.json` on the server. No story text, no scores, no IP addresses are written to disk by the login feature (the in-memory limit counters are lost on restart).
