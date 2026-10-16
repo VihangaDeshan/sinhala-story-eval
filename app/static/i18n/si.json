@@ -88,5 +88,11 @@
   "register.invalid_username": "ඉංග්‍රීසි අකුරු, ඉලක්කම් හෝ _ අක්ෂර 3–30 ක් භාවිත කරන්න.",
   "register.short_password": "මුරපදය අවම වශයෙන් අක්ෂර 8 ක් විය යුතු ය.",
   "register.limit": "මෙම ජාලයෙන් ගිණුම් වැඩි ප්‍රමාණයක් සාදා ඇත. පසුව නැවත උත්සාහ කරන්න.",
-  "register.closed": "මේ මොහොතේ නව ගිණුම් භාර නොගැනේ."
+  "register.closed": "මේ මොහොතේ නව ගිණුම් භාර නොගැනේ.",
+  "register.accept": "By creating an account you accept the",
+  "nav.home": "මුල් පිටුව",
+  "nav.privacy": "රහස්‍යතා ප්‍රතිපත්තිය",
+  "nav.signin": "පුරනය වන්න",
+  "nav.signout": "ඉවත් වන්න",
+  "footer.project": "Final-year research project"
 }

@@ -8,24 +8,36 @@
 </head>
 <body>
 
-<div class="page-wrap">
-
-  <!-- ── Language toggle ────────────────────────────────────────────── -->
-  <div class="topbar">
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
-      <span class="lang-sep" aria-hidden="true">|</span>
-      <button type="button" class="lang-btn" data-lang="si" aria-pressed="false">සිං</button>
+  <!-- ── Navigation bar ──────────────────────────────────────────────── -->
+  <nav class="top-nav" aria-label="Main Navigation">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="{{ url_for('index') }}" class="nav-brand">SSEF</a>
+      </div>
+      <div class="nav-right">
+        <a href="{{ url_for('index') }}" class="nav-item" data-i18n="nav.home">{{ t('nav.home') }}</a>
+        <a href="{{ url_for('privacy') }}" class="nav-item" data-i18n="nav.privacy">{{ t('nav.privacy') }}</a>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button type="button" class="lang-btn" data-lang="si" aria-pressed="false">සිං</button>
+        </div>
+        {% if login_enabled %}
+        <a href="{{ url_for('login') }}" class="nav-item" data-i18n="nav.signin">{{ t('nav.signin') }}</a>
+        {% endif %}
+      </div>
     </div>
-  </div>
+  </nav>
+
+<div class="page-wrap">
 
   <!-- ── Header ─────────────────────────────────────────────────────── -->
   <header class="site-header">
     <div class="logo-badge">
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <circle cx="16" cy="16" r="15" stroke="#6c63ff" stroke-width="2"/>
-        <path d="M8 22 Q16 6 24 22" stroke="#4ecdc4" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="16" cy="10" r="3" fill="#a855f7"/>
+        <circle cx="16" cy="16" r="15" stroke="var(--amber)" stroke-width="2"/>
+        <path d="M8 22 Q16 6 24 22" stroke="var(--amber-deep)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="10" r="3" fill="var(--amber)"/>
       </svg>
       SSEF
     </div>
@@ -69,6 +81,7 @@
 
       <button type="submit" class="btn btn-primary btn-block" data-i18n="register.submit">{{ t('register.submit') }}</button>
     </form>
+    <p class="auth-accept-privacy"><span data-i18n="register.accept">{{ t('register.accept') }}</span> <a href="{{ url_for('privacy') }}" data-i18n="nav.privacy">{{ t('nav.privacy') }}</a>.</p>
 
     <div class="auth-switch">
       <a href="{{ url_for('login') }}" data-i18n="login.have_account">{{ t('login.have_account') }}</a>
@@ -80,6 +93,9 @@
   <footer class="site-footer">
     <p data-i18n="footer">{{ t('footer') }}</p>
     <span class="version-badge">sinhala-story-eval</span>
+    <p class="footer-meta">
+      SSEF — Sinhala Story Evaluation Framework · © 2026 S.M.A.D.V.D. Sammandapperuma · <span data-i18n="footer.project">{{ t('footer.project') }}</span>, NIBM / Coventry University · <a href="{{ url_for('privacy') }}" data-i18n="nav.privacy">{{ t('nav.privacy') }}</a>
+    </p>
   </footer>
 
 </div><!-- /.page-wrap -->

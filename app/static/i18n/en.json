@@ -88,5 +88,11 @@
   "register.invalid_username": "Use 3–30 letters, numbers or _.",
   "register.short_password": "The password must be at least 8 characters.",
   "register.limit": "Too many accounts created from this network. Try again later.",
-  "register.closed": "New accounts are not being accepted at the moment."
+  "register.closed": "New accounts are not being accepted at the moment.",
+  "register.accept": "By creating an account you accept the",
+  "nav.home": "Home",
+  "nav.privacy": "Privacy Policy",
+  "nav.signin": "Sign in",
+  "nav.signout": "Sign out",
+  "footer.project": "Final-year research project"
 }

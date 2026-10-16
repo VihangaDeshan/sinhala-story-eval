@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSEF — Privacy Policy</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- ── Navigation bar ──────────────────────────────────────────────── -->
+  <nav class="top-nav" aria-label="Main Navigation">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="{{ url_for('index') }}" class="nav-brand">SSEF</a>
+      </div>
+      <div class="nav-right">
+        <a href="{{ url_for('index') }}" class="nav-item" data-i18n="nav.home">{{ t('nav.home') }}</a>
+        <a href="{{ url_for('privacy') }}" class="nav-item active" data-i18n="nav.privacy">{{ t('nav.privacy') }}</a>
+        <div class="lang-toggle" role="group" aria-label="Language">
+          <button type="button" class="lang-btn{% if lang != 'si' %} active{% endif %}" data-lang="en" aria-pressed="{{ 'true' if lang != 'si' else 'false' }}">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button type="button" class="lang-btn{% if lang == 'si' %} active{% endif %}" data-lang="si" aria-pressed="{{ 'true' if lang == 'si' else 'false' }}">සිං</button>
+        </div>
+        {% if login_enabled %}
+          {% if current_user %}
+          <form action="{{ url_for('logout') }}" method="post" class="nav-logout-form">
+            <button type="submit" class="nav-item nav-btn" data-i18n="nav.signout">{{ t('nav.signout') }}</button>
+          </form>
+          {% else %}
+          <a href="{{ url_for('login') }}" class="nav-item" data-i18n="nav.signin">{{ t('nav.signin') }}</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <header class="site-header">
+      <div class="logo-badge">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="16" cy="16" r="15" stroke="var(--amber)" stroke-width="2"/>
+          <path d="M8 22 Q16 6 24 22" stroke="var(--amber-deep)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="16" cy="10" r="3" fill="var(--amber)"/>
+        </svg>
+        SSEF
+      </div>
+      <p class="site-tagline" data-i18n="tagline">{{ t('tagline') }}</p>
+    </header>
+
+    <!-- ── Privacy card ────────────────────────────────────────────────── -->
+    <main class="card privacy-card" aria-labelledby="privacy-heading">
+      <h1 class="card-title-lg" id="privacy-heading" data-i18n="nav.privacy">{{ t('nav.privacy') }}</h1>
+
+      {% if lang == 'si' %}
+        {% include 'privacy_si.html' %}
+      {% else %}
+        {% include 'privacy_en.html' %}
+      {% endif %}
+    </main>
+
+    <!-- ── Footer ──────────────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      <p data-i18n="footer">{{ t('footer') }}</p>
+      <span class="version-badge">sinhala-story-eval</span>
+      <p class="footer-meta">
+        SSEF — Sinhala Story Evaluation Framework · © 2026 S.M.A.D.V.D. Sammandapperuma · <span data-i18n="footer.project">{{ t('footer.project') }}</span>, NIBM / Coventry University · <a href="{{ url_for('privacy') }}" data-i18n="nav.privacy">{{ t('nav.privacy') }}</a>
+      </p>
+    </footer>
+
+  </div><!-- /.page-wrap -->
+
+  <script>
+    (function() {
+      var LANG_KEY = "ssef-lang";
+      var I18N = { en: {}, si: {} };
+      var currentLang = "{{ lang }}";
+      try {
+        var saved = localStorage.getItem(LANG_KEY);
+        if (saved && saved !== currentLang && (saved === "en" || saved === "si")) {
+          window.location.replace("{{ url_for('privacy') }}?lang=" + saved);
+          return;
+        }
+      } catch(e) {}
+
+      function tr(key) {
+        return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.en && I18N.en[key]) || key;
+      }
+
+      function apply() {
+        document.documentElement.lang = currentLang;
+        document.querySelectorAll("[data-i18n]").forEach(function(el) {
+          el.textContent = tr(el.getAttribute("data-i18n"));
+        });
+        document.querySelectorAll(".lang-btn").forEach(function(b) {
+          var on = b.getAttribute("data-lang") === currentLang;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+      }
+
+      Promise.all([
+        fetch("/static/i18n/en.json").then(function(r) { return r.json(); }),
+        fetch("/static/i18n/si.json").then(function(r) { return r.json(); })
+      ]).then(function(res) {
+        I18N.en = res[0];
+        I18N.si = res[1];
+        apply();
+      }).catch(function() {});
+
+      document.querySelectorAll(".lang-btn").forEach(function(b) {
+        b.addEventListener("click", function() {
+          var l = b.getAttribute("data-lang");
+          try { localStorage.setItem(LANG_KEY, l); } catch(e) {}
+          window.location.href = "{{ url_for('privacy') }}?lang=" + l;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

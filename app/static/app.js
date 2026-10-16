@@ -357,17 +357,28 @@ function renderStoryViewer(result, text, countLine) {
 
   let html = "";
   if (segments && segments.length > 0) {
+    let inDialogue = false;
     for (const seg of segments) {
+      const isDia = (seg.type === "dialogue" || seg.type === "literary_in_dialogue");
+      if (isDia && !inDialogue) {
+        html += '<span class="hl-dia">';
+        inDialogue = true;
+      } else if (!isDia && inDialogue) {
+        html += '</span>';
+        inDialogue = false;
+      }
+
       const escaped = escapeHTML(seg.text);
       if (seg.type === "spoken_in_narration") {
         html += `<span class="hl-spoken-nar">${escaped}</span>`;
       } else if (seg.type === "literary_in_dialogue") {
         html += `<span class="hl-lit-dia">${escaped}</span>`;
-      } else if (seg.type === "dialogue") {
-        html += `<span class="hl-dia">${escaped}</span>`;
       } else {
         html += escaped;
       }
+    }
+    if (inDialogue) {
+      html += '</span>';
     }
   } else {
     html = escapeHTML(text);

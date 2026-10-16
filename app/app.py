@@ -369,8 +369,8 @@ def create_app():
         if request.path == "/healthz":
             return None
 
-        # Allow login and registration
-        if request.path in ("/login", "/register"):
+        # Allow login, registration, and privacy policy
+        if request.path in ("/login", "/register", "/privacy"):
             return None
 
         # Allow signed-in users
@@ -518,6 +518,14 @@ def create_app():
             lib_version=__version__,
             human_reference=ref,
         )
+
+    # ------------------------------------------------------------ GET /privacy
+    @app.route("/privacy")
+    def privacy():
+        lang = request.args.get("lang")
+        if lang not in ("en", "si"):
+            lang = "en"
+        return render_template("privacy.html", lang=lang)
 
     # -------------------------------------------------------- GET /healthz
     @app.route("/healthz")
