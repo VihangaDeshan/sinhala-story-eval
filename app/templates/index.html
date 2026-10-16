@@ -7,6 +7,8 @@
   <meta name="description"
         content="Paste a Sinhala story and see SSEF's four-dimension quality scores: fluency, coherence, lexical diversity, and register consistency (DARC)." />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta name="color-scheme" content="light dark" />
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
 
   {# Pass server-side data to JavaScript #}
   <script>
@@ -21,7 +23,15 @@
   <nav class="top-nav" aria-label="Main Navigation">
     <div class="nav-container">
       <div class="nav-left">
-        <a href="{{ url_for('index') }}" class="nav-brand">SSEF</a>
+        <a href="{{ url_for('index') }}" class="nav-brand">
+          <svg class="brand-mark" width="30" height="16" viewBox="0 0 30 16" fill="none" aria-hidden="true">
+            <rect x="0.75" y="2.75" width="28.5" height="10.5" rx="5.25" fill="var(--accent)"/>
+            <circle cx="8.5" cy="8" r="1.5" fill="var(--paper)"/>
+            <circle cx="21.5" cy="8" r="1.5" fill="var(--paper)"/>
+            <path d="M11.5 6.5h7M11.5 9.5h5" stroke="var(--paper)" stroke-width="1.1" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+          <span>SSEF</span>
+        </a>
       </div>
       <div class="nav-right">
         <a href="{{ url_for('index') }}" class="nav-item active" data-i18n="nav.home">{{ t('nav.home') }}</a>
@@ -31,6 +41,11 @@
           <span class="lang-sep" aria-hidden="true">|</span>
           <button type="button" class="lang-btn" data-lang="si" aria-pressed="false">සිං</button>
         </div>
+        <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false">
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.6A5.75 5.75 0 0 1 6.4 2.5a5.75 5.75 0 1 0 7.1 7.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M3.4 12.6l.9-.9M11.7 4.3l.9-.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <span class="sr-only" data-i18n="nav.theme">{{ t('nav.theme') }}</span>
+        </button>
         {% if login_enabled %}
           {% if current_user %}
           <form action="{{ url_for('logout') }}" method="post" class="nav-logout-form">
@@ -48,16 +63,13 @@
 
   <!-- ── Header ─────────────────────────────────────────────────────── -->
   <header class="site-header">
-    <div class="logo-badge">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-        <circle cx="16" cy="16" r="15" stroke="var(--amber)" stroke-width="2"/>
-        <path d="M8 22 Q16 6 24 22" stroke="var(--amber-deep)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-        <circle cx="16" cy="10" r="3" fill="var(--amber)"/>
-      </svg>
-      SSEF
-    </div>
-    <p class="site-tagline" data-i18n="tagline">{{ t('tagline') }}</p>
+    <h1 class="site-tagline" data-i18n="tagline">{{ t('tagline') }}</h1>
   </header>
+
+<main class="workspace">
+
+  <!-- ── Left column: story input ───────────────────────────────────── -->
+  <div class="ws-input">
 
   <!-- ── Input card ─────────────────────────────────────────────────── -->
   <section class="card" aria-labelledby="input-heading">
@@ -72,18 +84,6 @@
         <span data-i18n="input.nonsinhala">{{ t('input.nonsinhala') }}</span>
       </button>
     </div>
-
-    <details class="howto input-instructions" open>
-      <summary data-i18n="instr.title">{{ t('instr.title') }}</summary>
-      <ul>
-        <li data-i18n="instr.1">{{ t('instr.1') }}</li>
-        <li data-i18n="instr.2">{{ t('instr.2') }}</li>
-        <li data-i18n="instr.3">{{ t('instr.3') }}</li>
-        <li data-i18n="instr.4">{{ t('instr.4') }}</li>
-        <li data-i18n="instr.5">{{ t('instr.5') }}</li>
-        <li data-i18n="instr.6">{{ t('instr.6') }}</li>
-      </ul>
-    </details>
 
     <textarea id="story-textarea"
               placeholder="{{ t('input.placeholder') }}"
@@ -110,6 +110,11 @@
     </div>
   </section>
 
+  </div><!-- /.ws-input -->
+
+  <!-- ── Right column: results ──────────────────────────────────────── -->
+  <div class="ws-results">
+
   <!-- ── Results top anchor ──────────────────────────────────────────── -->
   <div id="results-top"></div>
 
@@ -124,6 +129,19 @@
     <span class="spinner" aria-hidden="true"></span>
     <span id="polling-text">{{ t('msg.running').replace('{s}', '0') }}</span>
   </div>
+
+  <!-- ── Input instructions ─────────────────────────────────────────── -->
+  <details class="howto input-instructions" id="input-instructions" open>
+    <summary data-i18n="instr.title">{{ t('instr.title') }}</summary>
+    <ul>
+      <li data-i18n="instr.1">{{ t('instr.1') }}</li>
+      <li data-i18n="instr.2">{{ t('instr.2') }}</li>
+      <li data-i18n="instr.3">{{ t('instr.3') }}</li>
+      <li data-i18n="instr.4">{{ t('instr.4') }}</li>
+      <li data-i18n="instr.5">{{ t('instr.5') }}</li>
+      <li data-i18n="instr.6">{{ t('instr.6') }}</li>
+    </ul>
+  </details>
 
   <!-- ── How to read these results ───────────────────────────────────── -->
   <details class="howto" open>
@@ -190,6 +208,10 @@
     <div class="comp-score">—</div>
     <div class="comp-note" data-i18n="comp.note">{{ t('comp.note') }}</div>
   </div>
+
+  </div><!-- /.ws-results -->
+
+</main><!-- /.workspace -->
 
   <!-- ── Story viewer ─────────────────────────────────────────────────── -->
   <section id="story-section" class="story-viewer hidden" aria-labelledby="story-heading">
