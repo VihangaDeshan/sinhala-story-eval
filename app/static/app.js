@@ -140,6 +140,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Submit
   $("btn-submit").addEventListener("click", submitEvaluate);
 
+  // Guides: input rules open first; "How to read" opens once there are results
+  showGuide("input");
+
   // Language toggle
   document.querySelectorAll(".lang-btn").forEach((b) => {
     b.addEventListener("click", () => setLang(b.dataset.lang));
@@ -150,6 +153,16 @@ document.addEventListener("DOMContentLoaded", () => {
   _lang = readSavedLang();
   loadI18n().then(applyLang);
 });
+
+// ── Guide panels ────────────────────────────────────────────────────────
+// "input": the input rules are open and "How to read these results" is closed.
+// "results": the other way round. The viewer can still open or close either.
+function showGuide(which) {
+  const instr = $("input-instructions");
+  const howto = document.querySelector("details.howto:not(.input-instructions)");
+  if (instr) instr.open = which === "input";
+  if (howto) howto.open = which === "results";
+}
 
 // ── Submit handler ──────────────────────────────────────────────────────
 // Server errors carry a `code` for the app's own messages; the library's
@@ -324,18 +337,23 @@ function renderResults(result, text, scroll) {
   // 4. Story viewer
   renderStoryViewer(result, text, view.count);
 
-  if (scroll) $("results-top").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (scroll) {
+    showGuide("results");
+    $("results-top").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 // ── Validation banner ───────────────────────────────────────────────────
 function showValidationKey(key, params, ok) {
   _valState = { key, params, ok };
+  if (!ok) showGuide("input");
   renderValidation();
 }
 
 // Used only for library validation messages, which are shown as returned.
 function showValidationRaw(text, ok) {
   _valState = { text, ok };
+  if (!ok) showGuide("input");
   renderValidation();
 }
 
