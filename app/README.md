@@ -54,6 +54,7 @@ See `deploy/ssef.service` and `deploy/nginx_ssef.conf` for the full systemd + ng
 | `GET`, `POST` | `/login` | Sign in to an account |
 | `GET`, `POST` | `/register` | Create a new user account |
 | `POST` | `/logout` | Sign out and clear session |
+| `GET`  | `/privacy` | Privacy policy, English or Sinhala (public, no sign-in) |
 | `POST` | `/api/evaluate` | Evaluate text (body: `{"text": "…", "fluency": false}`) |
 | `GET`  | `/api/job/<id>` | Poll a background fluency job |
 | `POST` | `/api/highlight` | Re-generate highlight segments for a given text |
@@ -99,7 +100,7 @@ Passwords are asked interactively twice via `getpass` and are never passed as co
 
 - `SSEF_REGISTRATION=off` closes user sign-up while keeping sign-in enabled.
 - `SSEF_LOGIN=off` disables login and sign-up controls completely for local development.
-- Passwords are sent without encryption until HTTPS is added.
+- The hosted application at https://generationkatha.online is served over HTTPS (nginx with a Let's Encrypt certificate). A local run on `127.0.0.1` uses plain HTTP.
 
 ### What is stored
 
