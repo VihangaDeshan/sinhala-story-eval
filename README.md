@@ -17,11 +17,20 @@ The framework measures four dimensions of a story. The fourth is the contributio
 
 ## Install
 
+The package is installed from GitHub (it is not on PyPI):
+
+```bash
+pip install "git+https://github.com/VihangaDeshan/sinhala-story-eval.git"              # three CPU metrics, no extra dependencies
+pip install "sinhala-story-eval[fluency] @ git+https://github.com/VihangaDeshan/sinhala-story-eval.git"   # adds SinBERT PPPL (torch, ~2 GB)
+```
+
+To work on the code or run the tests, clone it instead:
+
 ```bash
 git clone https://github.com/VihangaDeshan/sinhala-story-eval.git
 cd sinhala-story-eval
-pip install -e .              # three CPU metrics, no extra dependencies
-pip install -e ".[fluency]"   # adds SinBERT PPPL (torch, ~2 GB)
+pip install -e .
+pytest
 ```
 
 ## Use
@@ -100,12 +109,12 @@ app/                      the web application (Flask); adds no measurement of it
 pipeline/                 numbered stage scripts for the study
 experiments/              design-cycle evidence: what was tried and rejected
 data/                     generated stories and scores
-docs/                     decisions, methodology, design system
+docs/                     design system of the web application
 deploy/                   systemd and nginx configuration
 tests/
 ```
 
-`experiments/` holds the rejected alternatives with their numbers: the LaBSE rejection, five rejected generation models, the DARC v0→v4 iterations and the segmentation defect.
+`experiments/` holds the design-cycle record with its numbers: the DARC perturbation evaluation, the LaBSE rejection, five rejected generation models, the DARC V0→V4 iterations and the segmentation defect.
 
 ## Limitations
 
@@ -136,6 +145,6 @@ tests/
 - Zubair, C. (2010). Diglossia versus register: Discursive classifications of two Sinhala varieties. *Proceedings of the Annual Meeting of the Berkeley Linguistics Society*, 36, 499–514. https://doi.org/10.3765/bls.v36i1.3933
 - McCarthy, P. M., & Jarvis, S. (2010). MTLD, vocd-D, and HD-D. *Behavior Research Methods*, 42(2), 381–392.
 - Salazar, J., et al. (2020). Masked language model scoring. *ACL 2020*, 2699–2712.
-- Dhananjaya, V., et al. (2022). BERTifying Sinhala. arXiv:2208.07864.
+- Dhananjaya, V., Demotte, P., Ranathunga, S., & Jayasena, S. (2022). BERTifying Sinhala: A comprehensive analysis of pre-trained language models for Sinhala text classification. *Proceedings of LREC 2022*, 7377–7385. https://aclanthology.org/2022.lrec-1.803/
 
 MIT licence.
