@@ -33,6 +33,20 @@ pip install -e .
 pytest
 ```
 
+## Run on Google Colab
+
+`build_colab_notebook.py` builds `SSEF_Colab_Standalone.ipynb`, a self-contained copy of the
+library, the web application and the 30 generated sample stories. It runs on Google Colab with
+no GitHub access and no token, and gives the same numbers as the repository. The copyrighted
+human stories are not included.
+
+```bash
+python build_colab_notebook.py
+```
+
+Upload the notebook to Colab (File -> Upload notebook), choose a T4 GPU runtime if you want
+fluency, and run all cells. The notebook is generated, so it is not stored in the repository.
+
 ## Use
 
 ```python
@@ -112,6 +126,7 @@ data/                     generated stories and scores
 docs/                     design system of the web application
 deploy/                   systemd and nginx configuration
 tests/
+build_colab_notebook.py   builds the standalone Colab notebook
 ```
 
 `experiments/` holds the design-cycle record with its numbers: the DARC perturbation evaluation, the LaBSE rejection, five rejected generation models, the DARC V0→V4 iterations and the segmentation defect.
