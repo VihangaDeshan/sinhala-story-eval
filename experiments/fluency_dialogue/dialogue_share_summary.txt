@@ -1,0 +1,20 @@
+F3 analysis (25 Oct 2026). Four-rater fluency means (R4 excluded). Dialogue share = words inside quoted spans / all words (segment.py v4).
+
+n=30
+check: whole r=-0.647; partial|spans(dia_lines) r=-0.510; partial|spans(recount) r=-0.510
+dialogue share (words) mean=0.304 range 0.190-0.433
+share_w: r(share,PPPL)=+0.207 (p=0.273); r(share,fluency)=-0.010 (p=0.96); partial r(PPPL,fluency | share_w)=-0.659 (p=0.000)
+share_c: r(share,PPPL)=+0.265 (p=0.156); r(share,fluency)=-0.062 (p=0.746); partial r(PPPL,fluency | share_c)=-0.655 (p=0.000)
+ratio: r(share,PPPL)=+0.206 (p=0.276); r(share,fluency)=-0.010 (p=0.96); partial r(PPPL,fluency | ratio)=-0.659 (p=0.000)
+partial | share_w + spans: r=-0.470 (p=0.009)
+regression flu ~ log nar PPPL + log dia PPPL + share_w:
+  const: b=+5.255 p=0.000
+  lnar: b=-0.197 p=0.751
+  ldia: b=-0.323 p=0.232
+  share_w: b=-0.362 p=0.756
+  R2=0.058
+gemini: share_w mean=0.320 PPPL mean=5.81
+deepseek: share_w mean=0.280 PPPL mean=8.18
+gpt: share_w mean=0.310 PPPL mean=11.64
+partial | share_w + model: r=-0.556 (p=0.001)
+spans: r(spans,PPPL)=+0.938; r(spans,fluency)=-0.530 (p=0.003); r(spans,share_w)=+0.356
