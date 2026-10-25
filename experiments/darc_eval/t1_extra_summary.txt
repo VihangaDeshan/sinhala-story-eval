@@ -1,0 +1,15 @@
+pool: filtered 136 sentences, unfiltered 174 sentences
+== T1 published (filtered pool) with sub-scores
+  0%: DARC 0.9790  baseline 0.6162  N 0.983  D 0.950  B 1.000
+  10%: DARC 0.9231  baseline 0.5724  N 0.871  D 0.950  B 1.000
+  25%: DARC 0.8589  baseline 0.5176  N 0.743  D 0.950  B 0.999
+  50%: DARC 0.7853  baseline 0.4489  N 0.603  D 0.950  B 0.985
+  rho(level, DARC) all -0.931  unique -0.901 (n=480)  baseline -0.723
+  stories ordered correctly: 30/30
+== T1 filter-free (all narration sentences of H01 and H03)
+  0%: DARC 0.9790  baseline 0.6162
+  10%: DARC 0.9356  baseline 0.5832
+  25%: DARC 0.8817  baseline 0.5384
+  50%: DARC 0.8118  baseline 0.4761
+  rho(level, DARC) all -0.910  unique -0.875 (n=480)  baseline -0.649
+  stories ordered correctly: 30/30
