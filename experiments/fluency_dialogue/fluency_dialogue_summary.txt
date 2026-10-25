@@ -1,0 +1,8 @@
+Fluency and dialogue analyses (24 Oct 2026). Rater means use R1, R2, R3 and R5 (R4 excluded by the preset rule). Per-story ratings are not distributed; only results are recorded here.
+
+whole-story PPPL     r=-0.65 (p=0.000)  rho=-0.59 (p=0.001)  partial|spans r=-0.51 (p=0.005)  within-model r=-0.52 (p=0.004)
+narration-only PPPL  r=-0.05 (p=0.796)  rho=+0.00 (p=0.991)  partial|spans r=+0.08 (p=0.695)  within-model r=+0.05 (p=0.820)
+dialogue-only PPPL   r=-0.20 (p=0.297)  rho=-0.37 (p=0.045)  partial|spans r=-0.13 (p=0.501)  within-model r=-0.09 (p=0.649)
+PPPL vs dialogue spans r=+0.94
+within-model mtld vs Vocabulary: r=+0.27 (p=0.173)
+within-model coherence vs Coherence: r=+0.21 (p=0.294)
